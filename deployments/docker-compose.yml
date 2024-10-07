@@ -1,11 +1,27 @@
 version: '3.8'
 
-volumes:
-  prometheus_data: {}
-  grafana_data: {}
-
 services:
+  jaeger:
+    container_name: go-monitoring_jaeger
+    restart: always
+    image: jaegertracing/all-in-one:1.21
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    ports:
+      - 5775:5775/udp
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 14268:14268
+      - 14250:14250
+      - 9411:9411
+    networks:
+      - go-monitoring_network
+
+
   prometheus:
+    container_name: go-monitoring_prometheus
     image: prom/prometheus
     restart: always
     volumes:
@@ -25,6 +41,7 @@ services:
       - cadvisor
 
   node-exporter:
+    container_name: go-monitoring_node-exporter
     image: prom/node-exporter
     volumes:
       - /proc:/host/proc:ro
@@ -42,6 +59,7 @@ services:
       mode: global
 
   alertmanager:
+    container_name: go-monitoring_alert-manager
     image: prom/alertmanager
     restart: always
     ports:
@@ -53,6 +71,7 @@ services:
       - '--storage.path=/alertmanager'
 
   cadvisor:
+    container_name: go-monitoring_cadvisor
     image: gcr.io/cadvisor/cadvisor
     volumes:
       - /:/rootfs:ro
@@ -66,6 +85,7 @@ services:
       mode: global
 
   grafana:
+    container_name: go-monitoring_grafana
     image: grafana/grafana
     user: '472'
     restart: always
@@ -80,3 +100,12 @@ services:
       - 3000:3000
     depends_on:
       - prometheus
+
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  go-monitoring_network:
+    driver: bridge
